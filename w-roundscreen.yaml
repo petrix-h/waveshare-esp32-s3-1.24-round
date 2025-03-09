@@ -138,11 +138,10 @@ sensor:
   - platform: internal_temperature
     name: "Internal Temperature"
 
-lvgl:
-    displays:
-      - disp_bg_color: 0x000000
+lvgl:     
     pages:
       - id: meter_page
+        bg_color: 0x000000
         widgets:
           - meter:
               align: CENTER
