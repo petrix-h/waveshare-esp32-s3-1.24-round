@@ -113,6 +113,18 @@ sensor:
           text:
             format: "%.1f°C"
             args: [ 'x' ]
+  - platform: homeassistant
+    entity_id: sensor.temperature_humidity_sensor_e303_temperature
+    id: intake_temperature
+    on_value:
+      - lvgl.indicator.update:
+          id: temperature_needle2
+          value: !lambda return x * 10;
+      - lvgl.label.update:
+          id: temperature_text2
+          text:
+            format: "%.1f°C"
+            args: [ 'x' ]
   
     
   - platform: internal_temperature
