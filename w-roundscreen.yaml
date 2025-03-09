@@ -140,7 +140,7 @@ sensor:
 
 lvgl:
     displays:
-      disp_bg_color: 0x000000
+      - disp_bg_color: 0x000000
     pages:
       - id: meter_page
         widgets:
