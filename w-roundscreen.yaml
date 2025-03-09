@@ -102,18 +102,6 @@ display:
 
 sensor:
   - platform: homeassistant
-    entity_id: sensor.esphome_web_859dd9_intake_temp_2
-    id: outdoor_temperature
-    on_value:
-      - lvgl.indicator.update:
-          id: temperature_needle
-          value: !lambda return x * 10;
-      - lvgl.label.update:
-          id: temperature_text
-          text:
-            format: "%.1f°C"
-            args: [ 'x' ]
-  - platform: homeassistant
     entity_id: sensor.temperature_humidity_sensor_e303_temperature
     id: intake_temperature
     on_value:
@@ -181,53 +169,6 @@ lvgl:
     pages:
       - id: meter_page
         bg_color: 0x000000
-        widgets:
-          - meter:
-              align: CENTER
-              height: 1 #180
-              width: 1 #180
-              scales:
-                - range_from: -100 # scale for the needle value
-                  range_to: 400
-                  angle_range: 240
-                  rotation: 150
-                  indicators:
-                    - line:
-                        id: temperature_needle
-                        width: 2
-                        color: 0xFF0000
-                        r_mod: -4
-                    - tick_style:
-                        start_value: -10
-                        end_value: 40
-                        color_start: 0x0000bd
-                        color_end: 0xbd0000
-                        width: 1
-                - range_from: -10 # scale for the value labels
-                  range_to: 40
-                  angle_range: 240
-                  rotation: 150
-                  ticks:
-                    width: 1
-                    count: 51
-                    length: 10
-                    color: 0x000000
-                    major:
-                      stride: 5
-                      width: 2
-                      length: 10
-                      color: 0x404040
-                      label_gap: 10
-              widgets:
-                - label:
-                    id: temperature_text
-                    text: "-.-°C"
-                    align: CENTER
-                    y: 45
-                - label:
-                    text: "Test"
-                    align: CENTER
-                    y: 65
         widgets:
           - obj:
               height: 180
