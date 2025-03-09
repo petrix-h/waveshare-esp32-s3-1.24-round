@@ -230,12 +230,16 @@ lvgl:
                     action: light.toggle
                     data:
                       entity_id: light.ikea_of_sweden_tradfri_bulb_e27_cws_opal_600lm
-      - id: meter_page2
-        bg_color: 0xFFFFFF
-        widgets:
-          - switch:
-              align: CENTER
-              id: light_switch2
-              on_click:
-                light.toggle: back_light      
-
+          - arc:
+              x: 20
+              y: 100
+              id: arc_id
+              value: 21
+              min_value: 15
+              max_value: 30
+              height: 50
+              width: 50 
+              end_angle: 90 #180 #Default 45
+              rotation: 0.0 #Default 0.0
+              start_angle: 0 #Default 135
+        
