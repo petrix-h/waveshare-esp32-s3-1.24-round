@@ -110,6 +110,7 @@ display:
       width: 240
     rotation: 0
     color_order: BGR
+    id: display_1
 
 # lvgl:
 #     pages:
@@ -138,7 +139,11 @@ sensor:
   - platform: internal_temperature
     name: "Internal Temperature"
 
-lvgl:     
+lvgl:
+    displays:
+      - display_1
+    #touchscreens:
+    #  - touchscreen_1     
     pages:
       - id: meter_page
         bg_color: 0x000000
