@@ -1,0 +1,186 @@
+
+substitutions:
+  devicename: round-touchscreen
+  friendname: Round Touchscreen esp32
+# Change the timezone to suit your location, or even just remove it - it will likely be picked up automatically
+  timez: Europe/Helsinki
+#  board: esp32-s3-devkitc-1
+# Display state on initial start
+# Note that the screensaver only starts after the first touch of the display
+# Change to ALWAYS_OFF if want the screen to be off after booting, ALWAYS_ON if want it on at start eg for initial troubleshooting
+  screenstart: ALWAYS_ON
+# Timeout for the screen
+  screensaver: 5 min
+#GPIO pins for the LCD screen
+  repin: GPIO14
+  dcpin: GPIO8
+# Note - you may see an error on compilation "WARNING GPIO2 is a Strapping PIN and should be avoided" - ignore this as you have no choice
+# This error message may be removed via the "ignore_strapping_warning" option for the screen driver
+  bkpin: GPIO2 # was 2 two
+  clpin: GPIO10
+  mopin: GPIO11
+  mipin: GPIO12
+  cspin: GPIO09
+# GPIO pins for the touch screen
+  sdapin: GPIO6
+  sclpin: GPIO7
+  intpin: GPIO5  
+  rstpin: GPIO13
+
+
+#esphome:
+#  name: $devicename
+#  friendly_name: $friendname
+
+#esp32:
+#  board: $board
+#  framework:
+#    type: arduino
+
+# Enable logging
+#logger:
+
+# Enable Home Assistant API
+#api:
+#  encryption:
+#    key: key
+
+# ota:
+#   - platform: esphome
+#     password: password
+
+# wifi:
+#   ssid: ssid
+#   password: password
+
+#   # Enable fallback hotspot (captive portal) in case wifi connection fails
+#   ap:
+#     ssid: "Round-Touchscreen"
+#     password: password
+
+# captive_portal:
+
+
+spi:
+  mosi_pin: $mopin
+  clk_pin: $clpin
+  miso_pin: $mipin
+# Don't use software - makes it crawl  
+#  force_sw: True
+#mosi = Master Out Slave In
+#miso = Master In Slave Out or fermented bean paste. In this case, most likely the former rather than the latter. Doesn't matter as not used.
+
+i2c:
+  sda: $sdapin
+  scl: $sclpin
+  #Following helped someone get rid of the "Components should block" error messages but didn't for me
+  #frequency: 400kHz
+
+# Define a PWM output on the ESP32
+output:
+  - platform: ledc
+    pin: $bkpin
+    id: backlight_pwm
+
+# Define a monochromatic, dimmable light for the backlight
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: "Display Backlight"
+    id: back_light
+    restore_mode: ALWAYS_ON
+
+# Optional: Add a simple display test
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+
+display:
+  - platform: ili9xxx
+    model: GC9A01A #ST7789V
+    dc_pin: $dcpin
+    reset_pin: $repin
+    cs_pin: $cspin
+    invert_colors: true
+    show_test_card: false
+    auto_clear_enabled: false
+    dimensions: 
+      height: 240
+      width: 240
+    rotation: 0
+    color_order: BGR
+
+# lvgl:
+#     pages:
+#       - id: main_page
+#         widgets:
+#           - switch:
+#               align: CENTER
+#               id: light_switch
+#               #on_click:
+#               #  light.toggle: local_light
+
+sensor:
+  - platform: homeassistant
+    entity_id: sensor.esphome_web_859dd9_intake_temp_2
+    id: outdoor_temperature
+    on_value:
+      - lvgl.indicator.update:
+          id: temperature_needle
+          value: !lambda return x * 10;
+      - lvgl.label.update:
+          id: temperature_text
+          text:
+            format: "%.1f°C"
+            args: [ 'x' ]
+lvgl:
+    pages:
+      - id: meter_page
+        widgets:
+          - meter:
+              align: CENTER
+              height: 180
+              width: 180
+              scales:
+                - range_from: -100 # scale for the needle value
+                  range_to: 400
+                  angle_range: 240
+                  rotation: 150
+                  indicators:
+                    - line:
+                        id: temperature_needle
+                        width: 2
+                        color: 0xFF0000
+                        r_mod: -4
+                    - tick_style:
+                        start_value: -10
+                        end_value: 40
+                        color_start: 0x0000bd
+                        color_end: 0xbd0000
+                        width: 1
+                - range_from: -10 # scale for the value labels
+                  range_to: 40
+                  angle_range: 240
+                  rotation: 150
+                  ticks:
+                    width: 1
+                    count: 51
+                    length: 10
+                    color: 0x000000
+                    major:
+                      stride: 5
+                      width: 2
+                      length: 10
+                      color: 0x404040
+                      label_gap: 10
+              widgets:
+                - label:
+                    id: temperature_text
+                    text: "-.-°C"
+                    align: CENTER
+                    y: 45
+                - label:
+                    text: "Outdoor"
+                    align: CENTER
+                    y: 65
