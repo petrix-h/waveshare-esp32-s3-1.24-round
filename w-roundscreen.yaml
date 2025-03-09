@@ -210,14 +210,14 @@ lvgl:
                               width: 8
                               r_mod: 2
                               value: -150
-                - obj: # to cover the middle part of meter indicator line
-                    height: 123
-                    width: 123
-                    radius: 73
-                    align: CENTER
-                    border_width: 0
-                    pad_all: 0
-                    bg_color: 0xFFFFFF
+                #- obj: # to cover the middle part of meter indicator line
+                #    height: 123
+                #    width: 123
+                #    radius: 73
+                #    align: CENTER
+                #    border_width: 0
+                #    pad_all: 0
+                #    bg_color: 0xFFFFFF
                 - label:
                     id: temperature_text2
                     text: "--.-°C"
