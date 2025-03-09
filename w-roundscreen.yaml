@@ -137,8 +137,10 @@ sensor:
     
   - platform: internal_temperature
     name: "Internal Temperature"
-    
+
 lvgl:
+    displays:
+      disp_bg_color: 0x000000
     pages:
       - id: meter_page
         widgets:
