@@ -181,6 +181,6 @@ lvgl:
                     align: CENTER
                     y: 45
                 - label:
-                    text: "Outdoor"
+                    text: "Test"
                     align: CENTER
                     y: 65
