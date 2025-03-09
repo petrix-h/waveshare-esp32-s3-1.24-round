@@ -28,13 +28,16 @@ substitutions:
   rstpin: GPIO13
 
 #BT Proxy and beacon
+# Hmm, look into this maybe? https://github.com/rpatel3001/BleDistance/blob/master/example_configuration.yaml
 bluetooth_proxy:
-  active: true
+  active: false
 
 esp32_ble_tracker:
   scan_parameters:
-    interval: 1100ms
-    window: 1100ms
+    #interval: 1100ms
+    #window: 1100ms
+    duration: 60s
+    active: false
 
 spi:
   mosi_pin: $mopin
