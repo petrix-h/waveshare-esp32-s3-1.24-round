@@ -139,6 +139,22 @@ sensor:
   - platform: internal_temperature
     name: "Internal Temperature"
 
+
+touchscreen:
+  platform: cst816
+  id: touch_1
+  display: display_1
+  interrupt_pin: $intpin
+  reset_pin: $rstpin
+  on_touch:
+    - lambda: |-
+          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+
 lvgl:
     displays:
       - display_1
