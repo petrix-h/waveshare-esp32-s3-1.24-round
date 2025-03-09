@@ -134,6 +134,10 @@ sensor:
           text:
             format: "%.1f°C"
             args: [ 'x' ]
+    
+  - platform: internal_temperature
+    name: "Internal Temperature"
+    
 lvgl:
     pages:
       - id: meter_page
