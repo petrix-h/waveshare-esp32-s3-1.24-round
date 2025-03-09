@@ -161,7 +161,7 @@ touchscreen:
             - logger.log: "LVGL resuming"
             - lvgl.resume:
             - lvgl.widget.redraw:
-            - light.turn_on: display_backlight
+            - light.turn_on: back_light
 
 number:
   - platform: template
@@ -180,7 +180,7 @@ lvgl:
     displays:
       - display_1
     touchscreens:
-      - touchscreen_1     
+      - touch_1     
     on_idle:
       timeout: !lambda "return (id(display_timeout).state * 1000);"
       then:
