@@ -154,12 +154,39 @@ touchscreen:
               touch.x_raw,
               touch.y_raw
               );
+  on_release:
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - logger.log: "LVGL resuming"
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - light.turn_on: display_backlight
+
+number:
+  - platform: template
+    name: LVGL Screen timeout
+    optimistic: true
+    id: display_timeout
+    unit_of_measurement: "s"
+    initial_value: 45
+    restore_value: true
+    min_value: 10
+    max_value: 180
+    step: 5
+    mode: box
 
 lvgl:
     displays:
       - display_1
-    #touchscreens:
-    #  - touchscreen_1     
+    touchscreens:
+      - touchscreen_1     
+    on_idle:
+      timeout: !lambda "return (id(display_timeout).state * 1000);"
+      then:
+        - logger.log: "LVGL is idle"
+        - light.turn_off: back_light
+        - lvgl.pause:
     pages:
       - id: meter_page
         bg_color: 0x000000
