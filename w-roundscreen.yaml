@@ -1,0 +1,426 @@
+# Use following components in order to have the screen work and debug working 
+#captive_portal:
+#psram:
+#debug:
+#  update_interval: 5s    
+
+
+# Git repo examples https://esphome.io/components/packages
+#packages:
+  # shorthand form github://username/repository/[folder/]file-path.yml[@branch-or-tag]
+  #remote_package_shorthand: github://esphome/non-existant-repo/file1.yml@main
+
+  #remote_package_files:
+  #  url: https://github.com/petrix-h/waveshare-esp32-s3-1.24-round
+  #  files: [w-roundscreen.yaml]  # optional; if not specified, all files will be included
+  #  ref: initial-screen-trials  # optional
+  #  refresh: always  # optional
+
+
+substitutions:
+  devicename: round-touchscreen
+  friendname: Round Touchscreen esp32
+# Change the timezone to suit your location, or even just remove it - it will likely be picked up automatically
+  timez: Europe/Helsinki
+#  board: esp32-s3-devkitc-1
+# Display state on initial start
+# Note that the screensaver only starts after the first touch of the display
+# Change to ALWAYS_OFF if want the screen to be off after booting, ALWAYS_ON if want it on at start eg for initial troubleshooting
+  screenstart: ALWAYS_ON
+# Timeout for the screen
+  screensaver: 5 min
+#GPIO pins for the LCD screen
+  repin: GPIO14
+  dcpin: GPIO8
+# Note - you may see an error on compilation "WARNING GPIO2 is a Strapping PIN and should be avoided" - ignore this as you have no choice
+# This error message may be removed via the "ignore_strapping_warning" option for the screen driver
+  bkpin: GPIO2 # was 2 two
+  clpin: GPIO10
+  mopin: GPIO11
+  mipin: GPIO12
+  cspin: GPIO09
+# GPIO pins for the touch screen
+  sdapin: GPIO6
+  sclpin: GPIO7
+  intpin: GPIO5  
+  rstpin: GPIO13
+
+#BT Proxy and beacon
+# Hmm, look into this maybe? https://github.com/rpatel3001/BleDistance/blob/master/example_configuration.yaml
+#bluetooth_proxy:
+#  active: false
+
+#esp32_ble_tracker:
+#  scan_parameters:
+    #interval: 1100ms
+    #window: 1100ms
+#    duration: 60s
+#    active: false
+
+spi:
+  mosi_pin: $mopin
+  clk_pin: $clpin
+  miso_pin: $mipin
+# Don't use software - makes it crawl  
+#  force_sw: True
+#mosi = Master Out Slave In
+#miso = Master In Slave Out or fermented bean paste. In this case, most likely the former rather than the latter. Doesn't matter as not used.
+
+i2c:
+  - id: bus_internal
+    sda: $sdapin
+    scl: $sclpin
+    #Following helped someone get rid of the "Components should block" error messages but didn't for me
+    #frequency: 400kHz
+  #- id: bus_external # external bus for assist? 
+  #  sda: GPIOxx
+  #  scl: GPIOxx
+  #  scan: true
+
+# Define a PWM output on the ESP32
+output:
+  - platform: ledc
+    pin: $bkpin
+    id: backlight_pwm
+
+# Define a monochromatic, dimmable light for the backlight
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: "Display Backlight"
+    id: back_light
+    restore_mode: ALWAYS_ON
+    #on_state:
+    #  - lvgl.widget.update:
+    #      id: light_switch
+    #      state:
+    #        checked: !lambda return !id(back_light).current_values.is_on();
+
+
+# Optional: Add a simple display test
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+
+display:
+  - platform: ili9xxx
+    model: GC9A01A #ST7789V
+    dc_pin: $dcpin
+    reset_pin: $repin
+    cs_pin: $cspin
+    invert_colors: true
+    show_test_card: false
+    auto_clear_enabled: false
+    dimensions: 
+      height: 240
+      width: 240
+    rotation: 180 #0 # if changed touch screen will get messed up as it doesn't rotate
+    color_order: BGR
+    id: display_1
+
+sensor:
+  - platform: internal_temperature
+    name: "Internal Temperature"
+
+  - platform: debug
+    free:
+      name: "Heap Free"
+    block:
+      name: "Heap Max Block"
+    loop_time:
+      name: "Loop Time"
+    psram:
+      name: "Free PSRAM"
+    cpu_frequency:
+      name: "CPU Frequency"
+  #- platform: homeassistant
+  #  entity_id: sensor.w_roundscreen_internal_temperature
+  #  id: intake_temperature
+    #on_value:
+    #  - lvgl.indicator.update:
+    #      id: temperature_needle2
+    #      value: !lambda return x * 10;
+    #  - lvgl.label.update:
+    #      id: temperature_text2
+    #      text:
+    #        format: "%.1f°C"
+    #        args: [ 'x' ]
+  
+    
+
+
+
+touchscreen:
+  platform: cst816
+  id: touch_1
+  display: display_1
+  interrupt_pin: $intpin
+  reset_pin: $rstpin
+  transform:
+    #mirror_x: false
+    mirror_y: true
+    #swap_xy: false
+#  on_touch:
+#    - lambda: |-
+#          ESP_LOGI("touch", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+#              touch.x,
+#              touch.y,
+#              touch.x_raw,
+#              touch.y_raw
+#              );
+  on_release:
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - logger.log: "LVGL resuming"
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - light.turn_on: back_light
+
+number:
+  - platform: template
+    name: LVGL Screen timeout
+    optimistic: true
+    id: display_timeout
+    unit_of_measurement: "s"
+    initial_value: 45
+    restore_value: true
+    min_value: 10
+    max_value: 180
+    step: 5
+    mode: box
+
+#font:
+#  - file: "fonts/materialdesignicons-webfont.ttf"
+#    id: mdi_42
+#    size: 42
+#    bpp: 4
+#    glyphs: [
+#      "\U000F0335", # mdi-lightbulb
+#      "\U000F0336", # mdi-lightbulb-outline
+#      ]
+
+# binary_sensor:
+#   - platform: homeassistant
+#     id: remote_light
+#     entity_id: light.ikea_of_sweden_tradfri_bulb_e27_cws_opal_600lm
+#     trigger_on_initial_state: true
+    #on_state:
+    #  then:
+    #    lvgl.widget.update:
+    #      id: light_btn
+    #      state:
+    #       checked: !lambda return x;
+
+
+
+lvgl:
+    displays:
+      - display_1
+    touchscreens:
+      - touch_1     
+    on_idle:
+      timeout: !lambda "return (id(display_timeout).state * 1000);"
+      then:
+        - logger.log: "LVGL is idle"
+        - light.turn_off: back_light
+        - lvgl.pause:
+    pages:
+      - id: meter_page
+        bg_color: 0x000
+        widgets: 
+          #Wrapper object that works as a size restrictor
+          - obj: 
+              width: 50%
+              height: 50%
+              #x: 25%
+              #y: 25%
+              bg_color: 0x000000
+              pad_all: 0
+              border_width: 0
+              #border_color: 0xfff
+              widgets:
+
+                # Icon (Center)
+                - label:
+                    id: icon_label
+                    #type: label
+                    text: "\uF015"
+                    align: BOTTOM_RIGHT
+                    x: -2
+                    y: -15
+                    text_font: montserrat_32
+                    text_color: 0xffffff
+
+                # Indoor Hum Label (Top Center)
+                - label:
+                    id: room_label
+                    #type: label
+                    text: "Living Room"
+                    align: BOTTOM_RIGHT
+                    y: -2
+                    x: -2
+                    text_font: montserrat_12
+                    text_color: 0xffffff
+
+                # Indoor Temperature Arc (Top Left)
+                - arc:
+                    id: indoor_temp_arc
+                    #type: arc
+                    width: 60
+                    height: 60
+                    x: 50
+                    y: 30
+                    start_angle: 180
+                    end_angle: 360
+                    min_value: 15
+                    max_value: 30
+                    value: 21
+                    rotation: 0
+                    arc_width: 5
+                    indicator:
+                      arc_width: 5
+                    #  arc_color: 0xFFA500  # Orange
+                    widgets:
+                    - label:
+                        id: temp_label
+                        #type: label
+                        text: "25.2°"
+                        align: BOTTOM_MID
+                        y: -26
+                        text_font: montserrat_16
+                        text_color: 0xffffff
+
+
+                # Indoor Humidity Arc (Top Right)
+                - arc:
+                    id: indoor_humidity_arc
+                    #type: arc
+                    x: 30
+                    y: 70
+                    width: 43
+                    height: 43
+                    start_angle: 180
+                    end_angle: 360
+                    #mode: REVERSE
+                    min_value: 0
+                    max_value: 100
+                    value: 55
+                    rotation: 0
+                    arc_width: 3
+                    indicator:
+                      arc_width: 3
+                      arc_color: 0x00CED1  # Cyan
+                    widgets:                                       
+                    - label:
+                        id: hum_label
+                        #type: label
+                        text: "56%"
+                        align: BOTTOM_MID
+                        y: -17
+                        text_font: montserrat_12
+                        text_color: 0xffffff
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        ## second
+          #Wrapper object that works as a size restrictor
+          - obj: 
+              width: 50%
+              height: 50%
+              #x: 50%
+              y: 50%
+              bg_color: 0x000000
+              pad_all: 0
+              border_width: 0
+              #border_color: 0xfff
+              widgets:
+
+                # Icon (Center)
+                - label:
+                    id: icon_label2
+                    #type: label
+                    text: "\uF015"
+                    align: TOP_RIGHT
+                    x: -2
+                    y: 35
+                    text_font: montserrat_32
+                    text_color: 0xffffff
+
+                # Indoor Hum Label (Top Center)
+                - label:
+                    id: room_label2
+                    #type: label
+                    text: "Bedroom"
+                    align: TOP_RIGHT
+                    y: 65
+                    x: -2
+                    text_font: montserrat_12
+                    text_color: 0xffffff
+
+                # Indoor Temperature Arc (Top Left)
+                - arc:
+                    id: indoor_temp_arc2
+                    #type: arc
+                    width: 60
+                    height: 60
+                    x: 50
+                    y: 2
+                    start_angle: 180
+                    end_angle: 360
+                    min_value: 15
+                    max_value: 30
+                    value: 21
+                    rotation: 0
+                    arc_width: 5
+                    indicator:
+                      arc_width: 5
+                    #  arc_color: 0xFFA500  # Orange
+                    widgets:
+                    - label:
+                        id: temp_label2
+                        #type: label
+                        text: "25.2°"
+                        align: BOTTOM_MID
+                        y: -26
+                        text_font: montserrat_16
+                        text_color: 0xffffff
+
+
+                # Indoor Humidity Arc (Top Right)
+                - arc:
+                    id: indoor_humidity_arc2
+                    #type: arc
+                    x: 30
+                    y: 42
+                    width: 43
+                    height: 43
+                    start_angle: 180
+                    end_angle: 360
+                    #mode: REVERSE
+                    min_value: 0
+                    max_value: 100
+                    value: 55
+                    rotation: 0
+                    arc_width: 3
+                    indicator:
+                      arc_width: 3
+                      arc_color: 0x00CED1  # Cyan
+                    widgets:                                       
+                    - label:
+                        id: hum_label2
+                        #type: label
+                        text: "56%"
+                        align: BOTTOM_MID
+                        y: -17
+                        text_font: montserrat_12
+                        text_color: 0xffffff
